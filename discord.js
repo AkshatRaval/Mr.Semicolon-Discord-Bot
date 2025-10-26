@@ -3,8 +3,9 @@ const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js"); // <-
 const cron = require("node-cron");
 const axios = require("axios");
 const express = require("express");
-const app = express(); // <-- NEW
-const port = process.env.PORT || 3000; // <-- NEW
+const TurndownService = require('turndown');
+const app = express();
+const port = process.env.PORT || 3000;
 
 const client = new Client({
     intents: [
@@ -14,6 +15,7 @@ const client = new Client({
     ]
 })
 
+const turndownService = new TurndownService(); 
 async function postDailyChallenge(client) {
     try {
         console.log("Fetching daily challenge...");
@@ -25,6 +27,7 @@ async function postDailyChallenge(client) {
                    title
                    titleSlug
                    difficulty
+                   content
                  }
                }
              }
@@ -32,19 +35,48 @@ async function postDailyChallenge(client) {
         });
 
         const q = response.data.data.activeDailyCodingChallengeQuestion.question;
-        const msg = `💡 **${q.title}** (${q.difficulty})\n🔗 https://leetcode.com/problems/${q.titleSlug}`;
+        const problemUrl = `https://leetcode.com/problems/${q.titleSlug}`;
+
+        // --- 3. CONVERT AND CLEAN THE HTML ---
+        let description = turndownService.turndown(q.content);
+
+        // --- 4. TRUNCATE THE DESCRIPTION ---
+        // We'll limit it to 1500 chars to be safe.
+        if (description.length > 1500) {
+            description = description.substring(0, 1500) + "... \n\n[Click here to read the full problem]";
+        }
+
+        // --- 5. SET COLOR BASED ON DIFFICULTY ---
+        let difficultyColor = "#FFFFFF"; // White (default)
+        if (q.difficulty === "Easy") difficultyColor = "#00AF9B";   // Green
+        if (q.difficulty === "Medium") difficultyColor = "#FFB800"; // Yellow
+        if (q.difficulty === "Hard") difficultyColor = "#FF2D55";     // Red
+
+        // --- 6. BUILD THE EMBED ---
+        const challengeEmbed = new EmbedBuilder()
+            .setColor(difficultyColor)
+            .setTitle(`💡 Daily LeetCode: ${q.title}`)
+            .setURL(problemUrl)
+            .setDescription(description)
+            .addFields(
+                { name: "Difficulty", value: `**${q.difficulty}**`, inline: true }
+            )
+            .setFooter({ text: "Posted by Mr.Semicolon" })
+            .setTimestamp();
 
         const channel = await client.channels.fetch(process.env.CHANNEL_ID);
-        channel.send(msg);
+
+        // --- 7. SEND THE EMBED ---
+        await channel.send({ embeds: [challengeEmbed] });
+
         console.log("📢 Posted daily LeetCode challenge!");
-        return true; // Return true on success
+        return { success: true, embed: challengeEmbed }; // Return success and the embed
 
     } catch (error) {
         console.error("❌ Error fetching challenge:", error.message);
-        return false; // Return false on error
+        return { success: false }; // Return failure
     }
 }
-
 
 client.once("clientReady", () => {
     console.log(`Logged In as ${client.user.tag}`);
@@ -80,12 +112,18 @@ client.on("messageCreate", async (message) => { // <-- Made this async
         const apiLatency = Math.round(client.ws.ping);
         reply.edit(`🏓 Pong!\n**Bot Latency:** ${botLatency}ms\n**API Latency:** ${apiLatency}ms`);
     }
-
     if (command === "daily") {
-        message.reply("💡 On it! Fetching today’s LeetCode challenge...");
-        const success = await postDailyChallenge(client); // <-- Calls the same function
-        if (!success) {
-            message.channel.send("Sorry, I couldn't fetch the challenge. Please check the logs.");
+        const reply = await message.reply("💡 On it! Fetching today’s LeetCode challenge...");
+
+        // --- UPDATED !daily COMMAND ---
+        const result = await postDailyChallenge(client);
+
+        if (result.success) {
+            // Edit the reply to be a success message and send the embed
+            reply.edit("Here's today's challenge!");
+            message.channel.send({ embeds: [result.embed] }); // Send the embed it returned
+        } else {
+            reply.edit("Sorry, I couldn't fetch the challenge. Please check the logs.");
         }
     }
 
