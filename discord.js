@@ -158,7 +158,80 @@ client.on("messageCreate", async (message) => { // <-- Made this async
         }
     }
 
+
+    if (command === "leetcode" || command === "lc") {
+        if (!args[0]) {
+            return message.reply("Please provide a LeetCode username.\n`!leetcode [username]`");
+        }
+
+        const username = args[0];
+        const LEETCODE_API_URL = "https://leetcode.com/graphql";
+
+        // This is the GraphQL query to get user stats
+        const query = `
+      query getUserProfile($username: String!) {
+        matchedUser(username: $username) {
+          username
+          profile {
+            realName
+            ranking
+            reputation
+          }
+          submitStats: submitStatsGlobal {
+            acSubmissionNum {
+              difficulty
+              count
+            }
+          }
+        }
+      }
+    `;
+
+        // These are the variables to pass into the query
+        const variables = { username: username };
+
+        try {
+            const response = await axios.post(LEETCODE_API_URL, {
+                query: query,
+                variables: variables
+            });
+
+            const user = response.data.data.matchedUser;
+
+            if (!user) {
+                return message.reply("Couldn't find a LeetCode user with that name.");
+            }
+
+            // The stats are in an array, so we'll find them by name
+            const all = user.submitStats.acSubmissionNum.find(s => s.difficulty === "All").count;
+            const easy = user.submitStats.acSubmissionNum.find(s => s.difficulty === "Easy").count;
+            const medium = user.submitStats.acSubmissionNum.find(s => s.difficulty === "Medium").count;
+            const hard = user.submitStats.acSubmissionNum.find(s => s.difficulty === "Hard").count;
+
+            const leetcodeEmbed = new EmbedBuilder()
+                .setColor("#FFA116")
+                .setTitle(`${user.username}'s LeetCode Stats`)
+                .setURL(`https://leetcode.com/${user.username}`)
+                .addFields(
+                    { name: "Ranking", value: String(user.profile.ranking), inline: true },
+                    { name: "Reputation", value: String(user.profile.reputation), inline: true },
+                    { name: "Total Solved", value: `**${all}**`, inline: false },
+                    { name: "Easy", value: String(easy), inline: true },
+                    { name: "Medium", value: String(medium), inline: true },
+                    { name: "Hard", value: String(hard), inline: true }
+                );
+
+            message.channel.send({ embeds: [leetcodeEmbed] });
+
+        } catch (error) {
+            message.reply("Something went wrong while fetching LeetCode data.");
+            console.error("LeetCode User Error:", error.message);
+        }
+    }
+
+// Add All Above
 });
+
 
 app.get('/', (req, res) => { // <-- NEW
     res.send('Bot is alive and running!');
