@@ -93,15 +93,47 @@ client.on("messageCreate", async (message) => { // <-- Made this async
     if (command === "help") {
         const helpEmbed = new EmbedBuilder()
             .setColor("#0099ff")
-            .setTitle("Mr.Semicolon's Commands")
-            .setDescription("Here is what I can do:")
+            .setTitle("Mr.Semicolon's Help Menu 🤖")
+            .setDescription("Here is a full list of my commands. \n`<argument>` means it's required, `(@user)` means it's optional.")
             .addFields(
-                { name: `${prefix}ping`, value: "Checks my speed (latency)." },
-                { name: `${prefix}daily`, value: "Manually posts the LeETCode daily challenge." },
-                { name: `${prefix}avatar`, value: "Shows your (or a mentioned user's) avatar." },
-                { name: `${prefix}github`, value: "Fetches a GitHub user's profile." }, // <-- Added github to help
-                { name: `${prefix}help`, value: "Shows this help message." }
-            );
+                // --- Coding Commands Category ---
+                { name: "💻 **Coding Commands**", value: "Commands for developers and coders." },
+                {
+                    name: `${prefix}daily`,
+                    value: "Manually fetches and posts today's LeetCode daily challenge.",
+                    inline: false
+                },
+                {
+                    name: `${prefix}leetcode <username> (or ${prefix}lc)`,
+                    value: "Fetches a LeetCode user's profile stats, including ranking, reputation, and number of problems solved by difficulty.",
+                    inline: false
+                },
+                {
+                    name: `${prefix}github <username>`,
+                    value: "Fetches a GitHub user's profile, showing their bio, followers, following count, and number of public repos.",
+                    inline: false
+                },
+
+                // --- Utility & Fun Category ---
+                { name: "🛠️ **Utility & Fun Commands**", value: "Other useful and fun commands." },
+                {
+                    name: `${prefix}ping`,
+                    value: "Checks my response time to the Discord API. (Bot Latency vs. API Latency).",
+                    inline: false
+                },
+                {
+                    name: `${prefix}avatar (@user)`,
+                    value: "Displays your own avatar. If you mention another user, it will show their avatar instead.",
+                    inline: false
+                },
+                {
+                    name: `${prefix}help`,
+                    value: "Shows this help message. You're looking at it!",
+                    inline: false
+                }
+            )
+            .setFooter({ text: `Bot is online and ready! | ${prefix}command` });
+
         message.channel.send({ embeds: [helpEmbed] });
     }
 
@@ -229,7 +261,7 @@ client.on("messageCreate", async (message) => { // <-- Made this async
         }
     }
 
-// Add All Above
+    // Add All Above
 });
 
 
