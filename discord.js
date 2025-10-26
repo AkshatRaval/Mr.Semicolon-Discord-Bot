@@ -2,6 +2,9 @@ require("dotenv").config();
 const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js"); // <-- Added EmbedBuilder for cooler messages
 const cron = require("node-cron");
 const axios = require("axios");
+const express = require("express");
+const app = express(); // <-- NEW
+const port = process.env.PORT || 3000; // <-- NEW
 
 const client = new Client({
     intents: [
@@ -11,10 +14,6 @@ const client = new Client({
     ]
 })
 
-// ===============
-// SEPARATE FUNCTION FOR LEETCODE
-// We moved the logic here so it can be called by two different things.
-// ===============
 async function postDailyChallenge(client) {
     try {
         console.log("Fetching daily challenge...");
@@ -90,6 +89,7 @@ client.on("messageCreate", async (message) => { // <-- Made this async
         }
     }
 
+    
     if (command === "help") {
         const helpEmbed = new EmbedBuilder()
             .setColor("#0099ff")
@@ -97,8 +97,9 @@ client.on("messageCreate", async (message) => { // <-- Made this async
             .setDescription("Here is what I can do:")
             .addFields(
                 { name: `${prefix}ping`, value: "Checks my speed (latency)." },
-                { name: `${prefix}daily`, value: "Manually posts the LeetCode daily challenge." },
+                { name: `${prefix}daily`, value: "Manually posts the LeETCode daily challenge." },
                 { name: `${prefix}avatar`, value: "Shows your (or a mentioned user's) avatar." },
+                { name: `${prefix}github`, value: "Fetches a GitHub user's profile." }, // <-- Added github to help
                 { name: `${prefix}help`, value: "Shows this help message." }
             );
         message.channel.send({ embeds: [helpEmbed] });
@@ -123,7 +124,9 @@ client.on("messageCreate", async (message) => { // <-- Made this async
         const apiUrl = `https://api.github.com/users/${username}`;
 
         try {
-            const response = await axios.get(apiUrl);
+            const response = await axios.get(apiUrl, {
+                headers: { 'User-Agent': 'Mr.SemicolonBot' }
+            });
             const user = response.data;
 
             // Create a nice embed message
@@ -152,6 +155,14 @@ client.on("messageCreate", async (message) => { // <-- Made this async
         }
     }
 
+});
+
+app.get('/', (req, res) => { // <-- NEW
+    res.send('Bot is alive and running!');
+});
+
+app.listen(port, () => { // <-- NEW
+    console.log(`Web server is listening on port ${port}`);
 });
 
 client.login(process.env.DISCORD_TOKEN);
