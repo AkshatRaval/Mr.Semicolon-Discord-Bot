@@ -34,7 +34,7 @@ async function postDailyChallenge(client) {
 
         const q = response.data.data.activeDailyCodingChallengeQuestion.question;
         const msg = `💡 **${q.title}** (${q.difficulty})\n🔗 https://leetcode.com/problems/${q.titleSlug}`;
-        
+
         const channel = await client.channels.fetch(process.env.CHANNEL_ID);
         channel.send(msg);
         console.log("📢 Posted daily LeetCode challenge!");
@@ -49,7 +49,7 @@ async function postDailyChallenge(client) {
 
 client.once("clientReady", () => {
     console.log(`Logged In as ${client.user.tag}`);
-    
+
     // 1. CRON JOB (The Timer)
     // This will call your function every day at 9 AM
     cron.schedule("0 9 * * *", () => {
@@ -112,6 +112,46 @@ client.on("messageCreate", async (message) => { // <-- Made this async
             .setImage(user.displayAvatarURL({ dynamic: true, size: 256 }));
         message.channel.send({ embeds: [avatarEmbed] });
     }
+
+    // Add this inside your "messageCreate" event listener
+    if (command === "github") {
+        if (!args[0]) {
+            return message.reply("Please provide a GitHub username.\n`!github [username]`");
+        }
+
+        const username = args[0];
+        const apiUrl = `https://api.github.com/users/${username}`;
+
+        try {
+            const response = await axios.get(apiUrl);
+            const user = response.data;
+
+            // Create a nice embed message
+            const githubEmbed = new EmbedBuilder()
+                .setColor("#181717")
+                .setTitle(user.name || user.login)
+                .setURL(user.html_url)
+                .setThumbnail(user.avatar_url)
+                .setDescription(user.bio || "No bio provided.")
+                .addFields(
+                    { name: "Followers", value: String(user.followers), inline: true },
+                    { name: "Following", value: String(user.following), inline: true },
+                    { name: "Public Repos", value: String(user.public_repos), inline: true }
+                )
+                .setFooter({ text: `Joined: ${new Date(user.created_at).toLocaleDateString()}` });
+
+            message.channel.send({ embeds: [githubEmbed] });
+
+        } catch (error) {
+            if (error.response && error.response.status === 404) {
+                message.reply("Couldn't find a GitHub user with that name.");
+            } else {
+                message.reply("Something went wrong while fetching GitHub data.");
+                console.error(error);
+            }
+        }
+    }
+
 });
 
 client.login(process.env.DISCORD_TOKEN);
