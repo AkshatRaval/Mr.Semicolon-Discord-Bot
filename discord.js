@@ -235,10 +235,10 @@ client.on("messageCreate", async (message) => { // <-- Made this async
             }
 
             // The stats are in an array, so we'll find them by name
-            const all = user.submitStats.acSubmissionNum.find(s => s.difficulty === "All").count;
-            const easy = user.submitStats.acSubmissionNum.find(s => s.difficulty === "Easy").count;
-            const medium = user.submitStats.acSubmissionNum.find(s => s.difficulty === "Medium").count;
-            const hard = user.submitStats.acSubmissionNum.find(s => s.difficulty === "Hard").count;
+            const all = user.submitStats.acSubmissionNum.find(s => s.difficulty === "All").count || 0;
+            const easy = user.submitStats.acSubmissionNum.find(s => s.difficulty === "Easy").count || 0;
+            const medium = user.submitStats.acSubmissionNum.find(s => s.difficulty === "Medium").count || 0;
+            const hard = user.submitStats.acSubmissionNum.find(s => s.difficulty === "Hard").count || 0;
 
             const leetcodeEmbed = new EmbedBuilder()
                 .setColor("#FFA116")
