@@ -89,7 +89,7 @@ client.on("messageCreate", async (message) => { // <-- Made this async
         }
     }
 
-    
+
     if (command === "help") {
         const helpEmbed = new EmbedBuilder()
             .setColor("#0099ff")
@@ -125,7 +125,10 @@ client.on("messageCreate", async (message) => { // <-- Made this async
 
         try {
             const response = await axios.get(apiUrl, {
-                headers: { 'User-Agent': 'Mr.SemicolonBot' }
+                headers: {
+                    'User-Agent': 'Mr.SemicolonBot',
+                    'Authorization': `token ${process.env.GITHUB_TOKEN}`
+                }
             });
             const user = response.data;
 
